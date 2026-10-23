@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ADR Guard</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#eef2f1;--card:#fff;--tx:#10222e;--mut:#5d6f7a;--bd:#d9e2e0;--ac:#0b7d72;--acs:#d6efeb;--hi:#d6403a;--md:#d98a0b;--lo:#1a9b62;--nav:#10222e;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c171e;--card:#13232d;--tx:#e6eef0;--mut:#8ea3ad;--bd:#24383f;--ac:#2fc4b2;--acs:#12373a;--hi:#ff6a60;--md:#f2a93b;--lo:#3dd491;--nav:#08111a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c171e;--card:#13232d;--tx:#e6eef0;--mut:#8ea3ad;--bd:#24383f;--ac:#2fc4b2;--acs:#12373a;--hi:#ff6a60;--md:#f2a93b;--lo:#3dd491;--nav:#08111a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+h1,h2,h3{font-family:"Source Serif 4",Georgia,serif;margin:0;letter-spacing:-.01em}
+.mut{color:var(--mut)}
+input,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+label{font-size:12.5px;color:var(--mut);display:block;margin:10px 0 4px}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:600 15px "IBM Plex Sans",sans-serif;cursor:pointer;width:100%;margin-top:16px}
+.btn.s{width:auto;margin:0;padding:7px 12px;font-size:13px}
+.btn.g{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+.login{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr}
+.hero{background:var(--nav);color:#e6eef0;padding:56px;display:flex;flex-direction:column;justify-content:center;gap:18px}
+.hero h1{font-size:46px;line-height:1.08}.hero p{max-width:46ch;color:#9fb4bd;margin:0}
+.pulse{width:100%;max-width:420px;height:70px}
+.lwrap{display:flex;align-items:center;justify-content:center;padding:24px}
+.lcard{width:100%;max-width:360px}
+.lcard h2{font-size:26px;margin-bottom:4px}
+.top{background:var(--nav);color:#e6eef0;display:flex;align-items:center;gap:12px;padding:12px 20px}
+.top b{font:700 19px "Source Serif 4",serif;flex:1}
+.top span{font-size:13px;color:#9fb4bd}
+.app{display:grid;grid-template-columns:270px 1fr;gap:18px;padding:18px;max-width:1280px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px}
+.side{display:flex;flex-direction:column;gap:8px;align-self:start}
+.pt{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%}
+.pt.on{border-color:var(--ac);background:var(--acs)}
+.pt i{font-style:normal;font-weight:600;min-width:38px;text-align:center;border-radius:6px;padding:2px 0;color:#fff;font-size:13px}
+.pt small{display:block;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+.kpi{border-left:4px solid var(--c,var(--ac))}
+.kpi small{color:var(--mut);display:block}.kpi b{font:700 26px "Source Serif 4",serif}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.tab{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:999px;padding:8px 14px;font:500 14px "IBM Plex Sans",sans-serif;cursor:pointer;white-space:nowrap}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;color:#fff;font-weight:600;font-size:12.5px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--mut);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--bd)}
+td{padding:8px;border-bottom:1px solid var(--bd);vertical-align:top}
+.tw{overflow-x:auto}
+.gauge{width:100%;max-width:300px;display:block;margin:0 auto}
+.row{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;align-items:center}
+.bar{display:grid;grid-template-columns:150px 1fr 90px;gap:10px;align-items:center;margin:8px 0;font-size:14px}
+.bar div.t{height:14px;background:var(--bg);border-radius:7px;overflow:hidden}.bar div.t div{height:100%;border-radius:7px}
+.why{border-left:4px solid var(--ac);background:var(--acs);padding:12px 14px;border-radius:0 10px 10px 0;margin-top:14px}
+.act{border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px}
+.act dl{display:grid;grid-template-columns:130px 1fr;gap:4px 12px;margin:10px 0 0}.act dt{color:var(--mut)}.act dd{margin:0}
+@media(max-width:860px){.login{grid-template-columns:1fr}.hero{padding:28px}.hero h1{font-size:32px}.app{grid-template-columns:1fr}.row{grid-template-columns:1fr}.bar{grid-template-columns:100px 1fr 70px}.act dl{grid-template-columns:1fr}}
+</style></head>
+<body><div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useMemo}=React;
+/* ---------- Knowledge base (Feature 3 & 5) ---------- */
+let DDI=[["metformin","ibuprofen","Nephrotoxicity","High","Kidney"],["warfarin","aspirin","Major bleeding","High","Blood"],["lisinopril","spironolactone","Hyperkalemia","High","Kidney"],["digoxin","amiodarone","Digoxin toxicity","High","Heart"],["simvastatin","clarithromycin","Rhabdomyolysis","High","Muscle"],["furosemide","gentamicin","Nephrotoxicity","High","Kidney"],["isoniazid","paracetamol","Hepatotoxicity","High","Liver"],["isoniazid","rifampicin","Hepatotoxicity","High","Liver"],["lisinopril","ibuprofen","Nephrotoxicity","Moderate","Kidney"],["aspirin","ibuprofen","GI bleeding","Moderate","GI tract"],["warfarin","amiodarone","Major bleeding","High","Blood"],["clopidogrel","omeprazole","Reduced antiplatelet effect","Moderate","Heart"],
+["sertraline","tramadol","Serotonin syndrome","High","Brain"],["fluoxetine","tramadol","Serotonin syndrome","High","Brain"],["linezolid","sertraline","Serotonin syndrome","High","Brain"],["lithium","ibuprofen","Lithium toxicity","High","Brain"],["lithium","lisinopril","Lithium toxicity","High","Brain"],["methotrexate","ibuprofen","Methotrexate toxicity","High","Bone marrow"],["methotrexate","trimethoprim","Methotrexate toxicity","High","Bone marrow"],["methotrexate","amoxicillin","Methotrexate toxicity","Moderate","Bone marrow"],["glimepiride","ciprofloxacin","Hypoglycemia","High","Metabolic"],["insulin","propranolol","Hypoglycemia","Moderate","Metabolic"],["azithromycin","amiodarone","QT prolongation","High","Heart"],["ondansetron","amiodarone","QT prolongation","High","Heart"],["levofloxacin","amiodarone","QT prolongation","High","Heart"],["morphine","diazepam","Respiratory depression","High","Lungs"],["tramadol","diazepam","Respiratory depression","High","Lungs"],["sildenafil","nitroglycerin","Severe hypotension","High","Heart"],["amlodipine","simvastatin","Myopathy","Moderate","Muscle"],["atorvastatin","clarithromycin","Rhabdomyolysis","High","Muscle"],["warfarin","ciprofloxacin","Major bleeding","High","Blood"],["warfarin","fluconazole","Major bleeding","High","Blood"],["warfarin","ibuprofen","Major bleeding","High","Blood"],["clopidogrel","aspirin","Major bleeding","Moderate","Blood"],["enalapril","spironolactone","Hyperkalemia","High","Kidney"],["losartan","spironolactone","Hyperkalemia","High","Kidney"],["losartan","ibuprofen","Nephrotoxicity","Moderate","Kidney"],["diclofenac","lisinopril","Nephrotoxicity","Moderate","Kidney"],["naproxen","furosemide","Nephrotoxicity","Moderate","Kidney"],["vancomycin","gentamicin","Nephrotoxicity","High","Kidney"],["allopurinol","azathioprine","Myelosuppression","High","Bone marrow"],["ketoconazole","simvastatin","Rhabdomyolysis","High","Muscle"],["metoprolol","verapamil","Severe bradycardia","High","Heart"],["diltiazem","metoprolol","Severe bradycardia","High","Heart"],["digoxin","verapamil","Digoxin toxicity","High","Heart"],["digoxin","furosemide","Digoxin toxicity","Moderate","Heart"],["prednisolone","ibuprofen","GI bleeding","Moderate","GI tract"],["diclofenac","aspirin","GI bleeding","Moderate","GI tract"],["metformin","furosemide","Lactic acidosis","Moderate","Metabolic"],["paracetamol","carbamazepine","Hepatotoxicity","Moderate","Liver"],["amiodarone","simvastatin","Rhabdomyolysis","Moderate","Muscle"]];
+/* drug-disease rules: [drug, disease, ADR, severity, organ] */
+let DIS=[["ibuprofen","ckd","Nephrotoxicity","High","Kidney"],["diclofenac","ckd","Nephrotoxicity","High","Kidney"],["naproxen","ckd","Nephrotoxicity","High","Kidney"],["metformin","ckd","Lactic acidosis","High","Metabolic"],["digoxin","ckd","Digoxin toxicity","High","Heart"],["spironolactone","ckd","Hyperkalemia","High","Kidney"],["lisinopril","ckd","Hyperkalemia","Moderate","Kidney"],["ibuprofen","heart failure","Heart failure worsening","High","Heart"],["diclofenac","heart failure","Heart failure worsening","High","Heart"],["verapamil","heart failure","Heart failure worsening","High","Heart"],["metoprolol","asthma","Bronchospasm","High","Lungs"],["propranolol","asthma","Bronchospasm","High","Lungs"],["aspirin","asthma","Bronchospasm","Moderate","Lungs"],["paracetamol","liver disease","Hepatotoxicity","Moderate","Liver"],["isoniazid","liver disease","Hepatotoxicity","High","Liver"],["methotrexate","liver disease","Hepatotoxicity","High","Liver"],["atorvastatin","liver disease","Hepatotoxicity","Moderate","Liver"],["ibuprofen","peptic ulcer","GI bleeding","High","GI tract"],["aspirin","peptic ulcer","GI bleeding","High","GI tract"],["prednisolone","diabetes","Hyperglycemia","Moderate","Metabolic"],["tramadol","epilepsy","Seizures","High","Brain"],["levofloxacin","epilepsy","Seizures","Moderate","Brain"]];
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+let DRUGS=[...new Set([...DDI.flatMap(r=>[r[0],r[1]]),...DIS.map(r=>r[0]),"atorvastatin","amlodipine","pantoprazole","levothyroxine","salbutamol","cetirizine","montelukast","hydrochlorothiazide","clonidine","gabapentin","rosuvastatin","ramipril","atenolol","carvedilol","sitagliptin","linagliptin","apixaban","ceftriaxone","doxycycline","metronidazole"])].sort().map(cap);
+const DISEASES=["Diabetes","Hypertension","CKD","Heart failure","Atrial fibrillation","Asthma","COPD","Liver disease","Epilepsy","Peptic ulcer","Tuberculosis","Depression","Hypothyroidism","Arthritis","Hyperlipidemia","Gout"];
+let PREV={"Nephrotoxicity":["Reduce Metformin dose by 50%; stop NSAIDs","Serum creatinine and eGFR every 48 h; keep hydrated","Linagliptin"],"Major bleeding":["Stop aspirin unless clearly required; review warfarin dose","INR every 3 days; watch for bruising or black stools","Apixaban (specialist review)"],"Hyperkalemia":["Reduce spironolactone dose; avoid potassium supplements","Serum potassium within 3 days, then weekly","Amlodipine"],"Digoxin toxicity":["Cut digoxin dose by 50%","ECG and digoxin level in 72 h","Beta-blocker (e.g. bisoprolol)"],"Rhabdomyolysis":["Pause simvastatin during antibiotic course","CK level and muscle pain check","Azithromycin"],"Hepatotoxicity":["Review regimen with specialist; avoid extra paracetamol","Liver function tests weekly","Ethambutol-based regimen"],"GI bleeding":["Add a proton-pump inhibitor; stop one NSAID","Haemoglobin check; watch for stomach pain","Paracetamol"],"Reduced antiplatelet effect":["Switch omeprazole to pantoprazole","Review cardiac symptoms at next visit","Pantoprazole"],"Serotonin syndrome":["Stop one serotonergic drug; start lowest doses if both are essential","Watch for agitation, fever, tremor, fast heart rate","Paracetamol (for pain)"],"Lithium toxicity":["Avoid NSAID or ACE inhibitor; reduce lithium dose","Serum lithium level in 5 days, then weekly","Paracetamol (for pain)"],"Methotrexate toxicity":["Hold the interacting drug; review methotrexate dose","Full blood count and kidney function weekly","Paracetamol (for pain)"],"Hypoglycemia":["Reduce sulfonylurea or insulin dose; teach hypoglycemia signs","Capillary glucose 4 times daily for a week","Metformin or Sitagliptin"],"QT prolongation":["Avoid the combination; correct potassium and magnesium","Baseline and repeat ECG within 3 days","Doxycycline"],"Respiratory depression":["Lower both doses; avoid combining at night","Respiratory rate and sedation score every 4 h","Paracetamol (for pain)"],"Severe hypotension":["Contraindicated: never give together","Blood pressure every 15 min if exposed","Alternative for angina per cardiology"],"Myopathy":["Cap simvastatin at 20 mg","Ask about muscle pain; check CK if symptomatic","Rosuvastatin"],"Myelosuppression":["Cut azathioprine dose by 70%","Full blood count weekly for a month","Febuxostat (specialist review)"],"Severe bradycardia":["Stop one rate-slowing drug","Pulse and ECG within 48 h","Amlodipine"],"Lactic acidosis":["Reduce Metformin or hold during illness; check kidney function","Creatinine and eGFR every 2 weeks","Linagliptin"],"Heart failure worsening":["Stop the drug; avoid NSAIDs in heart failure","Daily weight, swelling and breathlessness check","Paracetamol or Carvedilol (as relevant)"],"Bronchospasm":["Stop non-selective beta-blocker; avoid aspirin if aspirin-sensitive","Peak flow and wheeze check at next visit","Amlodipine"],"Hyperglycemia":["Use the lowest steroid dose for the shortest time","Blood glucose daily during treatment","Non-steroid option per specialist"],"Seizures":["Avoid the drug in epilepsy","Seizure diary; review within a week","Paracetamol or Doxycycline (as relevant)"]};
+const SEVN={High:3,Moderate:2,Low:1};
+/* ---------- CSV loaders ---------- */
+const parseCSV=t=>{const rows=[];let r=[],c="",q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===","){r.push(c);c=""}else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&t[i+1]==="\n")i++;r.push(c);c="";if(r.some(x=>x))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(x=>x))rows.push(r);const h=(rows.shift()||[]).map(s=>s.trim());return rows.map(a=>Object.fromEntries(h.map((k,i)=>[k,(a[i]||"").trim()])))};
+const lc=s=>s.toLowerCase();
+function loadKB(rows){const a=[],b=[];rows.forEach(r=>{const x=[lc(r.Drug_A||""),lc(r.Drug_B_or_Condition||""),r.ADR,r.Severity,r.Organ];(lc(r.Rule_Type||"").includes("disease")?b:a).push(x)});if(a.length)DDI=a;if(b.length)DIS=b;DRUGS=[...new Set([...DRUGS,...DDI.flatMap(r=>[cap(r[0]),cap(r[1])]),...DIS.map(r=>cap(r[0]))])].sort()}
+function loadPrev(rows){const o={};rows.forEach(r=>{o[r.ADR_Type+(lc(r.Severity||"")==="moderate"?"|Moderate":"")]=[r.Recommendation_Action,r.Monitoring_Required,r.Alternative_Drug]});if(rows.length)PREV=o}
+const toPts=rows=>rows.map((r,i)=>({id:r.Patient_ID||"U"+(i+1),age:+r.Age||0,gender:/^f/i.test(r.Gender||"")?"F":"M",weight:+r.Weight||0,creat:+r.Creatinine||0,egfr:+r.eGFR||0,liver:+r.Liver_Score||0,comorb:(r.Comorbidities||"").replace(/;/g,", "),drugs:(r.Drug_List||"").replace(/;/g,", ")}));
+const aprsOnly=q=>{const ds=drugsOf(q);return Math.min(100,aprsParts(q,ds.length,findDDI(ds,q.comorb).length>0).reduce((a,b)=>a+b[1],0))};
+const NAMES=["Age","Gender","Creatinine","eGFR","Drug count","Interaction","APRS"];
+/* ---------- Feature 4: APRS ---------- */
+const drugsOf=p=>p.drugs.split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+const findDDI=(ds,c)=>{const l=ds.map(d=>d.toLowerCase()),cm=(c||"").toLowerCase().replace(/chronic kidney disease|kidney disease/g,"ckd");return[...DDI.filter(r=>l.includes(r[0])&&l.includes(r[1])),...DIS.filter(r=>l.includes(r[0])&&cm.includes(r[1])).map(r=>[r[0],"disease: "+r[1],r[2],r[3],r[4]])].sort((a,b)=>SEVN[b[3]]-SEVN[a[3]])};
+const aprsParts=(p,n,i)=>[["Age > 60",p.age>60?20:0],["Creatinine > 1.5",p.creat>1.5?25:0],["eGFR < 60",p.egfr<60?20:0],[`Medicines (${n} × 5)`,n*5],["Drug interaction found",i?15:0]];
+/* ---------- Feature 1: Random Forest trained in-browser ---------- */
+const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+let seed=42;const rnd=()=>(seed=(seed*1664525+1013904223)>>>0)/4294967296;
+const truth=x=>cl(.04+.25*cl((x[0]-40)/45)+.25*cl((x[2]-.8)/2)+.2*cl((90-x[3])/70)+.03*x[4]+.15*x[5]);
+function grow(X,y,d){
+  const m=y.reduce((a,b)=>a+b,0)/y.length;
+  if(d===0||y.length<8)return{v:m};
+  let best=null;
+  [...Array(7).keys()].sort(()=>rnd()-.5).slice(0,4).forEach(f=>{for(let k=0;k<6;k++){
+    const t=X[Math.floor(rnd()*X.length)][f];let ls=0,ln=0,rs=0,rn=0;
+    for(let i=0;i<X.length;i++){if(X[i][f]<=t){ls+=y[i];ln++}else{rs+=y[i];rn++}}
+    if(!ln||!rn)continue;const sc=ls*ls/ln+rs*rs/rn;if(!best||sc>best.sc)best={f,t,sc};}});
+  if(!best)return{v:m};
+  const L=[],R=[];X.forEach((x,i)=>(x[best.f]<=best.t?L:R).push(i));
+  return{f:best.f,t:best.t,l:grow(L.map(i=>X[i]),L.map(i=>y[i]),d-1),r:grow(R.map(i=>X[i]),R.map(i=>y[i]),d-1)};
+}
+const pt=(t,x)=>t.f===undefined?t.v:pt(x[t.f]<=t.t?t.l:t.r,x);
+const pf=(F,x)=>F.reduce((a,t)=>a+pt(t,x),0)/F.length;
+const MODEL=(()=>{
+  const X=[],P=[],D=[];
+  for(let i=0;i<700;i++){
+    const age=20+Math.floor(rnd()*70),cr=+(.5+rnd()*3).toFixed(2),eg=Math.round(cl(125-35*cr+(rnd()-.5)*24,10,120)),nd=1+Math.floor(rnd()*12),it=rnd()<(nd>5?.55:.2)?1:0;
+    const ap=Math.min(100,(age>60?20:0)+(cr>1.5?25:0)+(eg<60?20:0)+nd*5+(it?15:0));
+    const x=[age,rnd()<.5?1:0,cr,eg,nd,it,ap],p=cl(truth(x)+(rnd()-.5)*.08);
+    X.push(x);P.push(p);D.push(Math.round(cl(30-27*p+(rnd()-.5)*6,1,30)));
+  }
+  const forest=Y=>Array.from({length:30},()=>{const ix=Array.from({length:450},()=>Math.floor(rnd()*700));return grow(ix.map(i=>X[i]),ix.map(i=>Y[i]),6)});
+  return{PF:forest(P),TF:forest(D),BG:X.slice(0,25)};
+})();
+/* ---------- Feature 2: exact Shapley values (SHAP) ---------- */
+function shap(x){
+  const f=[];
+  for(let m=0;m<128;m++){let s=0;for(const b of MODEL.BG)s+=pf(MODEL.PF,x.map((v,i)=>(m>>i)&1?v:b[i]));f[m]=s/MODEL.BG.length}
+  const fa=[1,1,2,6,24,120,720,5040];
+  const phi=x.map((_,i)=>{let p=0;for(let m=0;m<128;m++){if((m>>i)&1)continue;let c=0;for(let j=m;j;j&=j-1)c++;p+=fa[c]*fa[6-c]/fa[7]*(f[m|(1<<i)]-f[m])}return p});
+  return{phi,base:f[0]};
+}
+const phrase=(i,x)=>[x[0]>60?"Age>60":"Age ≤60","Gender",x[2]>1.5?"High Creatinine":"Creatinine "+x[2],x[3]<60?"Low eGFR":"eGFR "+x[3],x[4]+" medicines",x[5]?"Drug interaction":"No interaction","APRS "+x[6]][i];
+function analyze(p){
+  const ds=drugsOf(p),hits=findDDI(ds,p.comorb),inter=hits.length>0,n=ds.length;
+  const parts=aprsParts(p,n,inter),aprs=Math.min(100,parts.reduce((a,b)=>a+b[1],0));
+  const x=[p.age,p.gender==="F"?1:0,p.creat,p.egfr,n,inter?1:0,aprs];
+  const prob=pf(MODEL.PF,x),days=Math.max(1,Math.round(pf(MODEL.TF,x))),sev=prob>=.65?"High":prob>=.35?"Moderate":"Low";
+  const organ=hits[0]?hits[0][4]:(p.creat>1.5||p.egfr<60?"Kidney":p.liver<60?"Liver":"None specific");
+  const{phi,base}=shap(x),tot=phi.reduce((a,b)=>a+Math.abs(b),0)||1;
+  const rank=phi.map((v,i)=>({i,v,share:Math.abs(v)/tot,label:phrase(i,x)})).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v));
+  const why=rank.filter(r=>r.v>0).slice(0,3).map(r=>`${r.label} (${Math.round(r.share*100)}%)`).join(", ");
+  const recs=hits.length?hits.map(h=>({type:h[2],sev:h[3],pair:`${h[0]} + ${h[1]}`,a:PREV[h[2]+"|"+h[3]]||PREV[h[2]]||["Review with a pharmacist","Clinical follow-up","Not available"]})):[{type:"General monitoring",sev:sev,pair:"No known interacting pair",a:["Routine renal dose-check of every medicine","Repeat creatinine and eGFR in 3 months","Not required"]}];
+  return{ds,hits,n,parts,aprs,prob,days,sev,organ,rank,why,base,recs};
+}
+const col=v=>v>=.65?"var(--hi)":v>=.35?"var(--md)":"var(--lo)";
+const Sev=({s})=><span className="badge" style={{background:col(s==="High"?1:s==="Moderate"?.5:0)}}>{s}</span>;
+const SAMPLE=[
+ {id:"P001",age:45,gender:"F",weight:58,creat:.9,egfr:95,liver:92,comorb:"Diabetes",drugs:"Metformin, Atorvastatin"},
+ {id:"P002",age:61,gender:"M",weight:74,creat:1.2,egfr:70,liver:88,comorb:"Hypertension",drugs:"Lisinopril, Aspirin, Metformin"},
+ {id:"P003",age:72,gender:"M",weight:68,creat:2.1,egfr:30,liver:75,comorb:"Diabetes, CKD",drugs:"Metformin, Ibuprofen, Lisinopril, Furosemide, Aspirin, Atorvastatin, Amlodipine, Pantoprazole"},
+ {id:"P004",age:68,gender:"M",weight:80,creat:1.7,egfr:48,liver:70,comorb:"AF, Heart failure",drugs:"Warfarin, Aspirin, Amiodarone, Digoxin"},
+ {id:"P005",age:55,gender:"F",weight:52,creat:1,egfr:82,liver:48,comorb:"Tuberculosis",drugs:"Isoniazid, Rifampicin, Paracetamol"}];
+/* ---------- UI ---------- */
+function Login({on}){
+  const[e,setE]=useState("doctor@adrguard.com"),[p,setP]=useState("demo1234");
+  return <div className="login">
+    <div className="hero"><h1>Catch the reaction before the prescription is filled.</h1>
+      <p>ADR Guard scores a patient’s risk, flags dangerous drug pairs, predicts severity, organ and timing, explains why, and suggests safer alternatives.</p>
+      <svg className="pulse" viewBox="0 0 420 70"><polyline fill="none" stroke="#2fc4b2" strokeWidth="3" strokeLinejoin="round" points="0,40 90,40 110,40 125,10 145,62 160,40 250,40 270,40 285,22 300,50 312,40 420,40"/></svg></div>
+    <div className="lwrap"><div className="lcard"><h2>Clinician sign in</h2><p className="mut" style={{marginTop:4}}>Demo mode: any email and password work.</p>
+      <label>Email</label><input value={e} onChange={x=>setE(x.target.value)}/>
+      <label>Password</label><input type="password" value={p} onChange={x=>setP(x.target.value)}/>
+      <button className="btn" onClick={()=>on(e||"doctor@adrguard.com")}>Sign in</button></div></div></div>;
+}
+const Gauge=({v})=>{const d="M10 100A90 90 0 0 1 190 100";return <svg viewBox="0 0 200 122" className="gauge"><path d={d} fill="none" stroke="var(--bd)" strokeWidth="16" strokeLinecap="round"/><path d={d} fill="none" stroke={col(v/100)} strokeWidth="16" strokeLinecap="round" strokeDasharray={`${2.827*v} 300`}/><text x="100" y="92" textAnchor="middle" fontSize="40" fontWeight="700" fontFamily="Source Serif 4,serif" fill="var(--tx)">{v}</text><text x="100" y="114" textAnchor="middle" fontSize="12" fill="var(--mut)">APRS out of 100</text></svg>};
+const TABS=["APRS score","Interactions & ADR","Multi-level prediction","Explainable AI","Prevention"];
+function App(){
+  const[user,setUser]=useState(null),[kv,setKv]=useState(0),[msg,setMsg]=useState(""),[pts,setPts]=useState(SAMPLE),[sel,setSel]=useState("P003"),[tab,setTab]=useState(0),[th,setTh]=useState(null);
+  if(th)document.documentElement.dataset.theme=th;
+  const p=pts.find(x=>x.id===sel)||pts[0];
+  const A=useMemo(()=>analyze(p),[p,kv]);
+  const all=useMemo(()=>Object.fromEntries(pts.map(q=>[q.id,aprsOnly(q)])),[pts,kv]);
+  if(!user)return <Login on={setUser}/>;
+  const set=(k,v)=>setPts(pts.map(q=>q.id===p.id?{...q,[k]:v}:q));
+  const num=k=>e=>set(k,parseFloat(e.target.value)||0);
+  const add=()=>{const id="P"+String(pts.length+1).padStart(3,"0");setPts([...pts,{id,age:50,gender:"M",weight:70,creat:1,egfr:80,liver:80,comorb:"",drugs:""}]);setSel(id)};
+  return <div>
+    <div className="top"><b>ADR Guard</b><span>{user}</span>
+      <button className="btn s g" style={{color:"#e6eef0",borderColor:"#3b5361"}} onClick={()=>setTh((document.documentElement.dataset.theme==="dark"||(!document.documentElement.dataset.theme&&matchMedia("(prefers-color-scheme: dark)").matches))?"light":"dark")}>Theme</button>
+      <button className="btn s g" style={{color:"#e6eef0",borderColor:"#3b5361"}} onClick={()=>setUser(null)}>Sign out</button></div>
+    <div className="app">
+      <div className="side card"><h3>Patients</h3>
+        <div style={{maxHeight:"50vh",overflowY:"auto",display:"flex",flexDirection:"column",gap:8}}>{pts.map(q=><button key={q.id} className={"pt"+(q.id===p.id?" on":"")} onClick={()=>setSel(q.id)}><i style={{background:col(all[q.id]/100)}}>{all[q.id]}</i><span>{q.id}<small>{q.age} y, {q.gender}, {drugsOf(q).length} medicines</small></span></button>)}
+        </div><button className="btn s g" onClick={add}>Add patient</button>
+        <div style={{borderTop:"1px solid var(--bd)",paddingTop:10}}><b style={{fontSize:14}}>Load CSV data</b>{[["1. Patients","pt"],["2. Interactions","kb"],["5. Prevention","pv"]].map(([l,k])=><label key={k} style={{cursor:"pointer"}}>{l}<input type="file" accept=".csv" style={{display:"none"}} onChange={async e=>{const f=e.target.files[0];if(!f)return;const rows=parseCSV(await f.text());if(k==="pt"){const n=toPts(rows);if(n.length){setPts(n);setSel(n[0].id)}}else if(k==="kb")loadKB(rows);else loadPrev(rows);setKv(v=>v+1);setMsg(l+": "+rows.length+" rows loaded");e.target.value=""}}/><span className="btn s g" style={{display:"block",marginTop:4,textAlign:"center"}}>Choose file</span></label>)}<small className="mut">{msg}</small></div></div>
+      <div>
+        <div className="card"><h3>{p.id} patient data</h3>
+          <div className="grid">
+            <div><label>Age</label><input type="number" value={p.age} onChange={num("age")}/></div>
+            <div><label>Gender</label><select value={p.gender} onChange={e=>set("gender",e.target.value)}><option>M</option><option>F</option></select></div>
+            <div><label>Weight (kg)</label><input type="number" value={p.weight} onChange={num("weight")}/></div>
+            <div><label>Creatinine</label><input type="number" step=".1" value={p.creat} onChange={num("creat")}/></div>
+            <div><label>eGFR</label><input type="number" value={p.egfr} onChange={num("egfr")}/></div>
+            <div><label>Liver score</label><input type="number" value={p.liver} onChange={num("liver")}/></div></div>
+          <label>Medicines (comma separated)</label><input value={p.drugs} onChange={e=>set("drugs",e.target.value)}/><select value="" style={{marginTop:6}} onChange={e=>{if(e.target.value)set("drugs",(p.drugs?p.drugs+", ":"")+e.target.value)}}><option value="">+ Add a medicine from the list</option>{DRUGS.map(d=><option key={d}>{d}</option>)}</select>
+          <label>Comorbidities</label><input value={p.comorb} onChange={e=>set("comorb",e.target.value)}/><select value="" style={{marginTop:6}} onChange={e=>{if(e.target.value)set("comorb",(p.comorb?p.comorb+", ":"")+e.target.value)}}><option value="">+ Add a disease from the list</option>{DISEASES.map(d=><option key={d}>{d}</option>)}</select></div>
+        <div className="kpis">
+          <div className="card kpi" style={{"--c":col(A.prob)}}><small>ADR probability</small><b>{Math.round(A.prob*100)}%</b></div>
+          <div className="card kpi" style={{"--c":col(A.prob)}}><small>Severity</small><b>{A.sev}</b></div>
+          <div className="card kpi"><small>Organ at risk</small><b>{A.organ}</b></div>
+          <div className="card kpi"><small>Expected onset</small><b>≤ {A.days} days</b></div></div>
+        <div className="tabs">{TABS.map((t,i)=><button key={t} className={"tab"+(tab===i?" on":"")} onClick={()=>setTab(i)}>{i+1}. {t}</button>)}</div>
+        <div className="card" style={{marginTop:10}}>
+          {tab===0&&<div className="row"><Gauge v={A.aprs}/><div className="tw"><h3 style={{marginBottom:8}}>How the score is built</h3><table><tbody>{A.parts.map(([l,v])=><tr key={l}><td>{l}</td><td style={{textAlign:"right",fontWeight:600}}>+{v}</td></tr>)}<tr><td><b>Total (capped at 100)</b></td><td style={{textAlign:"right"}}><b>{A.aprs}</b></td></tr></tbody></table></div></div>}
+          {tab===1&&<div><h3 style={{marginBottom:8}}>Detected drug interactions</h3>
+            {A.hits.length?<div className="tw"><table><thead><tr><th>Drug pair</th><th>Predicted ADR</th><th>Severity</th><th>Organ</th></tr></thead><tbody>{A.hits.map(h=><tr key={h[0]+h[1]}><td>{h[0]} + {h[1]}</td><td>{h[2]}</td><td><Sev s={h[3]}/></td><td>{h[4]}</td></tr>)}</tbody></table></div>:<p className="mut">No known interacting pair in this medicine list.</p>}
+            <p className="mut" style={{fontSize:13,marginTop:14}}>Checked against {DDI.length} drug–drug pairs and {DIS.length} drug–disease rules, covering {DRUGS.length} medicines and {DISEASES.length} conditions. Production data would come from DrugBank DDI, TWOSIDES and FAERS.</p></div>}
+          {tab===2&&<div><h3>Four predictions from one Random Forest</h3>
+            <p className="mut">Inputs: age, gender, creatinine, eGFR, medicine count, interaction flag and APRS. The model is 30 decision trees (depth 6) trained in your browser on 700 simulated cases; two forests predict probability and onset time.</p>
+            <div className="grid" style={{marginTop:12}}>{[["Probability",Math.round(A.prob*100)+"%"],["Severity",A.sev],["Organ",A.organ],["Time to ADR","Within "+A.days+" days"]].map(([k,v])=><div key={k} className="card"><small className="mut">{k}</small><div style={{font:"700 20px 'Source Serif 4',serif"}}>{v}</div></div>)}</div></div>}
+          {tab===3&&<div><h3 style={{marginBottom:4}}>Why this prediction</h3><p className="mut" style={{margin:0}}>Exact Shapley (SHAP) values. Red pushes risk up, green pushes it down. Average baseline risk is {Math.round(A.base*100)}%.</p>
+            <div style={{marginTop:10}}>{A.rank.map(r=>{const mx=Math.abs(A.rank[0].v)||1;return <div className="bar" key={r.i}><span>{r.label}</span><div className="t"><div style={{width:Math.abs(r.v)/mx*100+"%",background:r.v>=0?"var(--hi)":"var(--lo)"}}/></div><span style={{textAlign:"right"}}>{r.v>=0?"+":"−"}{Math.abs(r.v*100).toFixed(1)} pts</span></div>})}</div>
+            <div className="why"><b>Risk {A.sev} because:</b> {A.why||"no feature raises risk above baseline"}</div></div>}
+          {tab===4&&<div><h3 style={{marginBottom:10}}>Recommended actions</h3>{A.recs.map(r=><div className="act" key={r.type+r.pair}><b>{r.type}</b> <Sev s={r.sev}/> <span className="mut"> {r.pair}</span>
+            <dl><dt>Action</dt><dd>{r.a[0]}</dd><dt>Monitoring</dt><dd>{r.a[1]}</dd><dt>Alternative drug</dt><dd>{r.a[2]}</dd></dl></div>)}
+            <p className="mut" style={{fontSize:13}}>Decision support only. A clinician must confirm every change.</p></div>}
+        </div></div></div></div>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script></body></html>
